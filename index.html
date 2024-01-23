@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localisation Tracker</title>
+  <style>
+    #map {
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Localisation Tracker</h1>
+<div id="map"></div>
+
+<script src="https://maps.googleapis.com/maps/api/js?callback=initMap"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+<script>
+  var socket = io();
+
+  function initMap() {
+    // ... (comme dans l'exemple précédent)
+
+    function shareLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          var lat = position.coords.latitude;
+          var lon = position.coords.longitude;
+
+          var marker = new google.maps.Marker({
+            position: { lat: lat, lng: lon },
+            map: map,
+            title: 'Votre position'
+          });
+
+          // Émission de la nouvelle position au serveur
+          socket.emit('newPosition', { lat, lon });
+        }, function (error) {
+          console.error('Error getting location:', error);
+        });
+      } else {
+        console.error('Geolocation is not supported by your browser.');
+      }
+    }
+
+    // Demander automatiquement la permission dès le chargement de la page
+    document.addEventListener('DOMContentLoaded', function () {
+      shareLocation();
+    });
+
+    // Écouter les mises à jour de position du serveur
+    socket.on('updatePosition', function (position) {
+      console.log('Nouvelle position reçue du serveur:', position);
+
+      // Ajouter un marqueur pour la nouvelle position sur la carte
+      var newMarker = new google.maps.Marker({
+        position: { lat: position.lat, lng: position.lon },
+        map: map,
+        title: 'Nouvelle position'
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
